@@ -9,7 +9,9 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-
+import os
+import datetime
+import jwt
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -37,6 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'authentication',  #apps
+    'rest_framework',# instal  rest_framework
+    'corsheaders',# for the react allow cors policy
+    'rest_framework_simplejwt',# simple jwt
+    "rest_framework_simplejwt.token_blacklist", # add token to blacklist
 ]
 
 MIDDLEWARE = [
@@ -47,6 +54,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware', # add middle ware for the react
+    'whitenoise.middleware.WhiteNoiseMiddleware', # file for the serve static files
 ]
 
 ROOT_URLCONF = 'e_commerce.urls'
@@ -110,14 +119,82 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.0/howto/static-files/
-
-STATIC_URL = 'static/'
+# static files for images
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = '/static/'
+# add manual
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
+]
+MEDIA_ROOT = os.path.join(BASE_DIR,'static/images/')
+MEDIA_URL  = "/images/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(days=5),
+    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': False,
+
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+
+    'AUTH_HEADER_TYPES': ('Bearer'),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'JTI_CLAIM': 'jti',
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}
+# authentication models for the user
+AUTH_USER_MODEL = 'authentication.User'
+
+# rst framework AUTH
+REST_FRAMEWORK = {
+     'DEFAULT_PERMISSION_CLASSES': [
+         'rest_framework.permissions.IsAuthenticated',
+         'rest_framework.permissions.IsAdminUser',
+         ],
+    'NON_FIELD_ERRORS_KEY': 'error',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+    #  'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+     'rest_framework_simplejwt.authentication.JWTAuthentication',
+     'rest_framework.authentication.SessionAuthentication',
+     'rest_framework.authentication.BasicAuthentication',
+     ),
+    #'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPaginaion',
+}
+
+# email configration
+EMAIL_USE_TLS= True
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = "ancoder01@gmail.com"
+EMAIL_HOST_PASSWORD = "fevtjokuazoahsfw"
+
+# allow localhost 3000 to acced apis
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    "http://127.0.0.1:8000",
+]
+# CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
